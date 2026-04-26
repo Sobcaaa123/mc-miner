@@ -16,7 +16,7 @@ except ImportError:
     mb.showerror("Brak pywin32", "pip install pywin32"); sys.exit(1)
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
-VERSION     = "2.3"
+VERSION     = "2.2"
 GITHUB_USER = "Sobcaaa123"
 GITHUB_REPO = "mc-miner"
 GITHUB_FILE = "main"
@@ -29,21 +29,115 @@ def check_update():
         import urllib.request, os, subprocess
         with urllib.request.urlopen(VERSION_URL, timeout=5) as r:
             remote_ver = r.read().decode().strip()
-        print(f"lokalna: {VERSION}, github: {remote_ver}")  # DEBUG
         if remote_ver == VERSION:
             return
-        import tkinter.messagebox as mb
-        if mb.askyesno("Aktualizacja",
-                       f"Dostępna wersja {remote_ver} (masz {VERSION})\nPobrać i uruchomić ponownie?"):
-            with urllib.request.urlopen(RAW_URL, timeout=10) as r:
-                remote_src = r.read()
-            local_path = os.path.abspath(sys.argv[0])
-            with open(local_path, "wb") as f:
-                f.write(remote_src)
-            subprocess.Popen([sys.executable, local_path])
-            sys.exit(0)
-    except Exception as e:
-        print(f"BLAD: {e}")  # DEBUG
+
+        # ── okno aktualizacji ──────────────────────────────────────────────────
+        root = tk.Tk()
+        root.title("Aktualizacja")
+        root.geometry("380x220")
+        root.resizable(False, False)
+        root.configure(bg="#080808")
+        root.protocol("WM_DELETE_WINDOW", lambda: None)  # blokuj X
+
+        root.update_idletasks()
+        sw = root.winfo_screenwidth(); sh = root.winfo_screenheight()
+        root.geometry(f"380x220+{(sw-380)//2}+{(sh-220)//2}")
+
+        tk.Label(root, text="⬆", font=("Segoe UI", 32), bg="#080808", fg="#c8ff00").place(x=20, y=20)
+        tk.Label(root, text="Dostępna aktualizacja",
+                 font=("Segoe UI Black", 13), bg="#080808", fg="#efefef").place(x=72, y=22)
+        tk.Label(root, text=f"wersja {remote_ver}  (masz {VERSION})",
+                 font=("Segoe UI", 9), bg="#080808", fg="#444444").place(x=74, y=50)
+
+        tk.Frame(root, bg="#1c1c1c", height=1).place(x=0, y=82, width=380)
+
+        status_var = tk.StringVar(value="Kliknij aby pobrać aktualizację")
+        tk.Label(root, textvariable=status_var,
+                 font=("Segoe UI", 9), bg="#080808", fg="#444444").place(x=20, y=96)
+
+        # progress bar
+        tk.Frame(root, bg="#141414", width=340, height=8).place(x=20, y=118)
+        bar_fill = tk.Frame(root, bg="#c8ff00", width=0, height=8)
+        bar_fill.place(x=20, y=118)
+
+        def animate_bar(target_w):
+            start_w = bar_fill.winfo_width()
+            steps = 30
+            def _s(i):
+                t = 1-(1-i/steps)**3
+                w = int(start_w+(target_w-start_w)*t)
+                bar_fill.place(x=20, y=118, width=max(0,w))
+                if i < steps: root.after(12, lambda: _s(i+1))
+            _s(1)
+
+        btn = tk.Frame(root, bg="#c8ff00", width=340, height=42, cursor="hand2")
+        btn.place(x=20, y=154)
+        btn.pack_propagate(False)
+        btn_lbl = tk.Label(btn, text="▼  AKTUALIZUJ TERAZ",
+                           font=("Segoe UI", 9, "bold"),
+                           bg="#c8ff00", fg="#080808", cursor="hand2")
+        btn_lbl.pack(expand=True, fill="both")
+
+        clicked = [False]
+
+        def do_update(_=None):
+            if clicked[0]: return
+            clicked[0] = True
+            btn.configure(bg="#2a2a2a", cursor="arrow")
+            btn_lbl.configure(bg="#2a2a2a", fg="#444444", cursor="arrow")
+
+            def _run():
+                try:
+                    status_var.set("Łączenie z serwerem...")
+                    root.after(0, lambda: animate_bar(80))
+                    time.sleep(0.3)
+
+                    status_var.set("Pobieranie pliku...")
+                    root.after(0, lambda: animate_bar(200))
+
+                    with urllib.request.urlopen(RAW_URL, timeout=15) as r:
+                        data = r.read()
+
+                    root.after(0, lambda: animate_bar(300))
+                    status_var.set("Zapisywanie...")
+                    time.sleep(0.2)
+
+                    local_path = os.path.abspath(sys.argv[0])
+                    with open(local_path, "wb") as f:
+                        f.write(data)
+
+                    root.after(0, lambda: animate_bar(340))
+                    root.after(0, lambda: bar_fill.configure(bg="#39ff14"))
+                    status_var.set("✓ Gotowe! Uruchamianie...")
+                    time.sleep(0.8)
+
+                    subprocess.Popen([sys.executable, local_path])
+                    root.after(0, root.destroy)
+                    sys.exit(0)
+
+                except Exception as e:
+                    status_var.set(f"Błąd: {e}")
+                    root.after(0, lambda: bar_fill.configure(bg="#ff6b35"))
+
+            threading.Thread(target=_run, daemon=True).start()
+
+        def _hover_in(_):
+            if not clicked[0]:
+                btn.configure(bg="#a8d400"); btn_lbl.configure(bg="#a8d400")
+        def _hover_out(_):
+            if not clicked[0]:
+                btn.configure(bg="#c8ff00"); btn_lbl.configure(bg="#c8ff00")
+
+        for w in (btn, btn_lbl):
+            w.bind("<Enter>", _hover_in)
+            w.bind("<Leave>", _hover_out)
+            w.bind("<Button-1>", do_update)
+
+        root.mainloop()
+
+    except Exception:
+        pass
 
 # ── paleta ──────────────────────────────────────────────────────────────────────
 BG      = "#080808"
@@ -256,7 +350,7 @@ class App(tk.Tk):
                  bg=BG, fg=ACCENT).place(x=22,y=16)
         tk.Label(hf, text="miner", font=("Segoe UI Light",22),
                  bg=BG, fg=WHITE).place(x=62,y=16)
-        tk.Label(hf, text=f"by sigmus  •  v{VERSION}", font=("Segoe UI",8),
+        tk.Label(hf, text=f"by sobota  •  v{VERSION}", font=("Segoe UI",8),
                  bg=BG, fg=DIM).place(x=24,y=46)
 
         self._dot_cv = tk.Canvas(hf,width=12,height=12,bg=BG,highlightthickness=0)
