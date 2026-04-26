@@ -17,7 +17,7 @@ except ImportError:
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
 VERSION     = "2.6"
-GITHUB_USER = "Sobcaaa123"f
+GITHUB_USER = "Sobcaaa123"
 GITHUB_REPO = "mc-miner"
 GITHUB_FILE = "main"
 
