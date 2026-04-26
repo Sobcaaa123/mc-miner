@@ -16,7 +16,7 @@ except ImportError:
     mb.showerror("Brak pywin32", "pip install pywin32"); sys.exit(1)
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
-VERSION     = "2.1"
+VERSION     = "2.2"
 GITHUB_USER = "Sobcaaa123"
 GITHUB_REPO = "mc-miner"
 GITHUB_FILE = "main"
