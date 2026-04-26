@@ -270,7 +270,7 @@ class App(tk.Tk):
                  bg=BG, fg=ACCENT).place(x=22,y=16)
         tk.Label(hf, text="miner", font=("Segoe UI Light",22),
                  bg=BG, fg=WHITE).place(x=62,y=16)
-        tk.Label(hf, text="by sobota sigma", font=("Segoe UI",8),
+        tk.Label(hf, text="by sobdota", font=("Segoe UI",8),
                  bg=BG, fg=DIM).place(x=24,y=46)
 
         # dot indicator
