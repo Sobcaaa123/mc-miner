@@ -309,7 +309,7 @@ class FancyBtn(tk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("cweeelix")
+        self.title("Miner by sobota")
         self.geometry("540x570")
         self.resizable(False, False)
         self.configure(bg=BG)
@@ -348,9 +348,9 @@ class App(tk.Tk):
 
         tk.Label(hf, text="mc", font=("Segoe UI Black",22),
                  bg=BG, fg=ACCENT).place(x=22,y=16)
-        tk.Label(hf, text="cwel", font=("Segoe UI Light",22),
+        tk.Label(hf, text="kopacz", font=("Segoe UI Light",22),
                  bg=BG, fg=WHITE).place(x=62,y=16)
-        tk.Label(hf, text=f"by sobota sigma  •  v{VERSION}", font=("Segoe UI",8),
+        tk.Label(hf, text=f"by sobota •  v{VERSION}", font=("Segoe UI",8),
                  bg=BG, fg=DIM).place(x=24,y=46)
 
         self._dot_cv = tk.Canvas(hf,width=12,height=12,bg=BG,highlightthickness=0)
