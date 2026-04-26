@@ -16,7 +16,7 @@ except ImportError:
     mb.showerror("Brak pywin32", "pip install pywin32"); sys.exit(1)
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
-VERSION     = "2.6"
+VERSION     = "2.7"
 GITHUB_USER = "Sobcaaa123"
 GITHUB_REPO = "mc-miner"
 GITHUB_FILE = "main"
@@ -348,7 +348,7 @@ class App(tk.Tk):
 
         tk.Label(hf, text="mc", font=("Segoe UI Black",22),
                  bg=BG, fg=ACCENT).place(x=22,y=16)
-        tk.Label(hf, text="miner", font=("Segoe UI Light",22),
+        tk.Label(hf, text="cwel", font=("Segoe UI Light",22),
                  bg=BG, fg=WHITE).place(x=62,y=16)
         tk.Label(hf, text=f"by sobota sigma  •  v{VERSION}", font=("Segoe UI",8),
                  bg=BG, fg=DIM).place(x=24,y=46)
