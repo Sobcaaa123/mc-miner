@@ -16,45 +16,31 @@ except ImportError:
     mb.showerror("Brak pywin32", "pip install pywin32"); sys.exit(1)
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
-VERSION = "1.0"   # <-- zmien przy kazdym commicie na GitHubie
+VERSION     = "1.0"
+GITHUB_USER = "Sobcaaa123"
+GITHUB_REPO = "mc-miner"
+GITHUB_FILE = "main"
 
-VERSION = "1.0"          # możesz zostawić, nie jest używany do porównania
-GITHUB_USER = "TwojaNazwaUzytkownika"   # np. "jankowalski"
-GITHUB_REPO = "mc-miner"                # nazwa repo
-GITHUB_FILE = "main.py"                 # nazwa pliku w repo
-
-RAW_URL     = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/{GITHUB_FILE}"
-API_URL     = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{GITHUB_FILE}"
+RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/{GITHUB_FILE}"
 
 def check_update():
-    """Sprawdza czy jest nowa wersja i pyta uzytkownika czy pobrac."""
     try:
-        import urllib.request, json, hashlib, os, sys
-
-        # pobierz aktualny plik z GitHub
+        import urllib.request, hashlib, os, subprocess
         with urllib.request.urlopen(RAW_URL, timeout=5) as r:
             remote_src = r.read()
-
-        # porownaj z lokalnym plikiem
         local_path = os.path.abspath(sys.argv[0])
         with open(local_path, "rb") as f:
             local_src = f.read()
-
         if hashlib.md5(remote_src).hexdigest() == hashlib.md5(local_src).hexdigest():
-            return  # brak zmian
-
-        # jest roznica - zapytaj
+            return
         import tkinter.messagebox as mb
-        if mb.askyesno("Aktualizacja",
-                       "Dostepna jest nowa wersja skryptu.\nPobrać i uruchomić ponownie?"):
+        if mb.askyesno("Aktualizacja", "Dostępna jest nowa wersja!\nPobrać i uruchomić ponownie?"):
             with open(local_path, "wb") as f:
                 f.write(remote_src)
-            import subprocess
             subprocess.Popen([sys.executable, local_path])
             sys.exit(0)
     except Exception:
-        pass  # brak internetu / blad - ignoruj, uruchom normalnie
-
+        pass
 
 # ── paleta ──────────────────────────────────────────────────────────────────────
 BG      = "#080808"
