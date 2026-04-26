@@ -16,7 +16,7 @@ except ImportError:
     mb.showerror("Brak pywin32", "pip install pywin32"); sys.exit(1)
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
-VERSION     = "3.2"
+VERSION     = "3.1"
 GITHUB_USER = "Sobcaaa123"
 GITHUB_REPO = "mc-miner"
 GITHUB_FILE = "main"
@@ -87,38 +87,55 @@ def check_update():
             btn.configure(bg="#2a2a2a", cursor="arrow")
             btn_lbl.configure(bg="#2a2a2a", fg="#444444", cursor="arrow")
 
-            def _run():
-                try:
-                    status_var.set("Łączenie z serwerem...")
-                    root.after(0, lambda: animate_bar(80))
-                    time.sleep(0.3)
+def _run():
+    try:
+        status_var.set("Łączenie z serwerem...")
+        root.after(0, lambda: animate_bar(80))
+        time.sleep(0.3)
 
-                    status_var.set("Pobieranie pliku...")
-                    root.after(0, lambda: animate_bar(200))
+        status_var.set("Pobieranie pliku...")
+        root.after(0, lambda: animate_bar(200))
 
-                    with urllib.request.urlopen(RAW_URL, timeout=15) as r:
-                        data = r.read()
+        with urllib.request.urlopen(RAW_URL, timeout=15) as r:
+            data = r.read()
 
-                    root.after(0, lambda: animate_bar(300))
-                    status_var.set("Zapisywanie...")
-                    time.sleep(0.2)
+        root.after(0, lambda: animate_bar(300))
+        status_var.set("Zapisywanie...")
+        time.sleep(0.2)
 
-                    local_path = os.path.abspath(sys.argv[0])
-                    with open(local_path, "wb") as f:
-                        f.write(data)
+        local_path = os.path.abspath(sys.argv[0])
+        temp_path  = local_path + ".new"
 
-                    root.after(0, lambda: animate_bar(340))
-                    root.after(0, lambda: bar_fill.configure(bg="#39ff14"))
-                    status_var.set("✓ Gotowe! Uruchamianie...")
-                    time.sleep(0.8)
+        # zapisz jako .new zamiast nadpisywać siebie
+        with open(temp_path, "wb") as f:
+            f.write(data)
 
-                    subprocess.Popen([sys.executable, local_path])
-                    root.after(0, root.destroy)
-                    os._exit(0)
+        root.after(0, lambda: animate_bar(340))
+        root.after(0, lambda: bar_fill.configure(bg="#39ff14"))
+        status_var.set("✓ Gotowe! Uruchamianie...")
+        time.sleep(0.8)
 
-                except Exception as e:
-                    status_var.set(f"Błąd: {e}")
-                    root.after(0, lambda: bar_fill.configure(bg="#ff6b35"))
+        # bat podmienia plik po zamknięciu exe
+        bat_path = local_path + "_update.bat"
+        bat = f"""@echo off
+timeout /t 2 /nobreak >nul
+move /y "{temp_path}" "{local_path}"
+start "" "{local_path}"
+del "%~f0"
+"""
+        with open(bat_path, "w") as f:
+            f.write(bat)
+
+        subprocess.Popen(
+            ["cmd.exe", "/c", bat_path],
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        root.after(0, root.destroy)
+        os._exit(0)
+
+    except Exception as e:
+        status_var.set(f"Błąd: {e}")
+        root.after(0, lambda: bar_fill.configure(bg="#ff6b35"))
 
             threading.Thread(target=_run, daemon=True).start()
 
