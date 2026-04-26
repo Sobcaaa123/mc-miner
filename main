@@ -17,7 +17,7 @@ except ImportError:
 
 # ── auto-updater ────────────────────────────────────────────────────────────────
 VERSION     = "2.6"
-GITHUB_USER = "Sobcaaa123"
+GITHUB_USER = "Sobcaaa123"f
 GITHUB_REPO = "mc-miner"
 GITHUB_FILE = "main"
 
@@ -309,7 +309,7 @@ class FancyBtn(tk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("mc miner")
+        self.title("cweeelix")
         self.geometry("540x570")
         self.resizable(False, False)
         self.configure(bg=BG)
