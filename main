@@ -186,7 +186,7 @@ class FancyBtn(tk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("mc miner")
+        self.title("mc")
         self.geometry("540x570")
         self.resizable(False, False)
         self.configure(bg=BG)
