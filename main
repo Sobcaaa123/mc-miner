@@ -32,13 +32,12 @@ def check_update():
         if remote_ver == VERSION:
             return
 
-        # ── okno aktualizacji ──────────────────────────────────────────────────
         root = tk.Tk()
         root.title("Aktualizacja")
         root.geometry("380x220")
         root.resizable(False, False)
         root.configure(bg="#080808")
-        root.protocol("WM_DELETE_WINDOW", lambda: None)  # blokuj X
+        root.protocol("WM_DELETE_WINDOW", lambda: None)
 
         root.update_idletasks()
         sw = root.winfo_screenwidth(); sh = root.winfo_screenheight()
@@ -56,7 +55,6 @@ def check_update():
         tk.Label(root, textvariable=status_var,
                  font=("Segoe UI", 9), bg="#080808", fg="#444444").place(x=20, y=96)
 
-        # progress bar
         tk.Frame(root, bg="#141414", width=340, height=8).place(x=20, y=118)
         bar_fill = tk.Frame(root, bg="#c8ff00", width=0, height=8)
         bar_fill.place(x=20, y=118)
@@ -67,7 +65,7 @@ def check_update():
             def _s(i):
                 t = 1-(1-i/steps)**3
                 w = int(start_w+(target_w-start_w)*t)
-                bar_fill.place(x=20, y=118, width=max(0,w))
+                bar_fill.place(x=20, y=118, width=max(0, w))
                 if i < steps: root.after(12, lambda: _s(i+1))
             _s(1)
 
@@ -87,55 +85,54 @@ def check_update():
             btn.configure(bg="#2a2a2a", cursor="arrow")
             btn_lbl.configure(bg="#2a2a2a", fg="#444444", cursor="arrow")
 
-def _run():
-    try:
-        status_var.set("Łączenie z serwerem...")
-        root.after(0, lambda: animate_bar(80))
-        time.sleep(0.3)
+            def _run():
+                try:
+                    status_var.set("Łączenie z serwerem...")
+                    root.after(0, lambda: animate_bar(80))
+                    time.sleep(0.3)
 
-        status_var.set("Pobieranie pliku...")
-        root.after(0, lambda: animate_bar(200))
+                    status_var.set("Pobieranie pliku...")
+                    root.after(0, lambda: animate_bar(200))
 
-        with urllib.request.urlopen(RAW_URL, timeout=15) as r:
-            data = r.read()
+                    with urllib.request.urlopen(RAW_URL, timeout=15) as r:
+                        data = r.read()
 
-        root.after(0, lambda: animate_bar(300))
-        status_var.set("Zapisywanie...")
-        time.sleep(0.2)
+                    root.after(0, lambda: animate_bar(300))
+                    status_var.set("Zapisywanie...")
+                    time.sleep(0.2)
 
-        local_path = os.path.abspath(sys.argv[0])
-        temp_path  = local_path + ".new"
+                    local_path = os.path.abspath(sys.argv[0])
+                    temp_path  = local_path + ".new"
 
-        # zapisz jako .new zamiast nadpisywać siebie
-        with open(temp_path, "wb") as f:
-            f.write(data)
+                    with open(temp_path, "wb") as f:
+                        f.write(data)
 
-        root.after(0, lambda: animate_bar(340))
-        root.after(0, lambda: bar_fill.configure(bg="#39ff14"))
-        status_var.set("✓ Gotowe! Uruchamianie...")
-        time.sleep(0.8)
+                    root.after(0, lambda: animate_bar(340))
+                    root.after(0, lambda: bar_fill.configure(bg="#39ff14"))
+                    status_var.set("✓ Gotowe! Uruchamianie...")
+                    time.sleep(0.8)
 
-        # bat podmienia plik po zamknięciu exe
-        bat_path = local_path + "_update.bat"
-        bat = f"""@echo off
-timeout /t 2 /nobreak >nul
-move /y "{temp_path}" "{local_path}"
-start "" "{local_path}"
-del "%~f0"
-"""
-        with open(bat_path, "w") as f:
-            f.write(bat)
+                    bat_path = local_path + "_update.bat"
+                    bat = (
+                        "@echo off\n"
+                        "timeout /t 2 /nobreak >nul\n"
+                        f"move /y \"{temp_path}\" \"{local_path}\"\n"
+                        f"start \"\" \"{local_path}\"\n"
+                        "del \"%~f0\"\n"
+                    )
+                    with open(bat_path, "w") as f:
+                        f.write(bat)
 
-        subprocess.Popen(
-            ["cmd.exe", "/c", bat_path],
-            creationflags=subprocess.CREATE_NO_WINDOW
-        )
-        root.after(0, root.destroy)
-        os._exit(0)
+                    subprocess.Popen(
+                        ["cmd.exe", "/c", bat_path],
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                    root.after(0, root.destroy)
+                    os._exit(0)
 
-    except Exception as e:
-        status_var.set(f"Błąd: {e}")
-        root.after(0, lambda: bar_fill.configure(bg="#ff6b35"))
+                except Exception as e:
+                    status_var.set(f"Błąd: {e}")
+                    root.after(0, lambda: bar_fill.configure(bg="#ff6b35"))
 
             threading.Thread(target=_run, daemon=True).start()
 
