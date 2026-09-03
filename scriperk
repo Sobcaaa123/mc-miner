@@ -131,6 +131,7 @@ local DEFAULT_OPTIONS = {
 	SilentAim = false,
 	SilentAimFov = 120,
 	SilentAimRange = 1500,
+	SilentAimFriends = "",
 }
 
 local options = {}
@@ -269,6 +270,29 @@ local function loadSettings()
 end
 
 loadSettings()
+
+-- UserIds selected in FRIENDS are excluded from Silent Aim target selection.
+-- They are stored as a comma-separated string so the existing JSON settings
+-- system can remember the selection between executions.
+local silentAimFriendIds = {}
+
+local function rebuildSilentAimFriendIds()
+	table.clear(silentAimFriendIds)
+	for userId in tostring(options.SilentAimFriends or ""):gmatch("[^,]+") do
+		silentAimFriendIds[userId] = true
+	end
+end
+
+local function serializeSilentAimFriendIds()
+	local userIds = {}
+	for userId in pairs(silentAimFriendIds) do
+		table.insert(userIds, userId)
+	end
+	table.sort(userIds)
+	return table.concat(userIds, ",")
+end
+
+rebuildSilentAimFriendIds()
 
 local saveVersion = 0
 saveSettings = function(force)
@@ -1295,6 +1319,135 @@ local function createActionButton(parent, textValue, callback)
 	return holder
 end
 
+local refreshSilentAimFriends
+
+local function createSilentAimFriendsSelector(parent)
+	local layout = parent:FindFirstChildOfClass("UIListLayout")
+	if layout then
+		layout.Padding = UDim.new(0, 5)
+	end
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 8)
+	padding.PaddingBottom = UDim.new(0, 10)
+	padding.PaddingLeft = UDim.new(0, 13)
+	padding.PaddingRight = UDim.new(0, 13)
+	padding.Parent = parent
+
+	local description = Instance.new("TextLabel")
+	description.Name = "Description"
+	description.Size = UDim2.new(1, 0, 0, 28)
+	description.BackgroundTransparency = 1
+	description.Font = Enum.Font.Gotham
+	description.Text = "Click a player to exclude them from Silent Aim."
+	description.TextColor3 = COLORS.Muted
+	description.TextSize = 9
+	description.TextWrapped = true
+	description.TextXAlignment = Enum.TextXAlignment.Left
+	description.ZIndex = 7
+	description.Parent = parent
+
+	local playerButtons = Instance.new("Frame")
+	playerButtons.Name = "PlayerButtons"
+	playerButtons.Size = UDim2.new(1, 0, 0, 0)
+	playerButtons.AutomaticSize = Enum.AutomaticSize.Y
+	playerButtons.BackgroundTransparency = 1
+	playerButtons.ZIndex = 7
+	playerButtons.Parent = parent
+
+	local buttonLayout = Instance.new("UIListLayout")
+	buttonLayout.Padding = UDim.new(0, 5)
+	buttonLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	buttonLayout.Parent = playerButtons
+
+	refreshSilentAimFriends = function()
+		if not alive or not playerButtons.Parent then
+			return
+		end
+		for _, child in ipairs(playerButtons:GetChildren()) do
+			if child:IsA("GuiButton") or child.Name == "EmptyLabel" then
+				child:Destroy()
+			end
+		end
+
+		local serverPlayers = {}
+		for _, targetPlayer in ipairs(Players:GetPlayers()) do
+			if targetPlayer ~= player then
+				table.insert(serverPlayers, targetPlayer)
+			end
+		end
+		table.sort(serverPlayers, function(left, right)
+			return string.lower(left.Name) < string.lower(right.Name)
+		end)
+
+		if #serverPlayers == 0 then
+			local emptyLabel = Instance.new("TextLabel")
+			emptyLabel.Name = "EmptyLabel"
+			emptyLabel.Size = UDim2.new(1, 0, 0, 30)
+			emptyLabel.BackgroundTransparency = 1
+			emptyLabel.Font = Enum.Font.Gotham
+			emptyLabel.Text = "No other players in the server."
+			emptyLabel.TextColor3 = COLORS.Muted
+			emptyLabel.TextSize = 9
+			emptyLabel.ZIndex = 7
+			emptyLabel.Parent = playerButtons
+			return
+		end
+
+		for index, targetPlayer in ipairs(serverPlayers) do
+			local userId = tostring(targetPlayer.UserId)
+			local ignored = silentAimFriendIds[userId] == true
+			local button = Instance.new("TextButton")
+			button.Name = "Player_" .. userId
+			button.Size = UDim2.new(1, 0, 0, 31)
+			button.BackgroundColor3 = ignored and COLORS.AccentDark or COLORS.Control
+			button.BorderSizePixel = 0
+			button.AutoButtonColor = false
+			button.Font = Enum.Font.GothamMedium
+			button.Text = ignored and ("IGNORED  •  " .. targetPlayer.Name)
+				or targetPlayer.Name
+			button.TextColor3 = ignored and COLORS.Accent or COLORS.Text
+			button.TextSize = 10
+			button.TextTruncate = Enum.TextTruncate.AtEnd
+			button.LayoutOrder = index
+			button.ZIndex = 8
+			button.Parent = playerButtons
+			corner(button, 4)
+			stroke(button, ignored and COLORS.AccentDark or COLORS.Stroke, 1, 0.15)
+
+			button.MouseEnter:Connect(function()
+				tween(button, 0.14, {
+					BackgroundColor3 = ignored and COLORS.AccentDark or COLORS.PanelHover,
+					TextColor3 = COLORS.Accent,
+				})
+			end)
+			button.MouseLeave:Connect(function()
+				tween(button, 0.14, {
+					BackgroundColor3 = ignored and COLORS.AccentDark or COLORS.Control,
+					TextColor3 = ignored and COLORS.Accent or COLORS.Text,
+				})
+			end)
+			button.MouseButton1Click:Connect(function()
+				if silentAimFriendIds[userId] then
+					silentAimFriendIds[userId] = nil
+				else
+					silentAimFriendIds[userId] = true
+				end
+				setOption("SilentAimFriends", serializeSilentAimFriendIds())
+				refreshSilentAimFriends()
+			end)
+		end
+	end
+
+	refreshSilentAimFriends()
+	connect(Players.PlayerAdded, function()
+		task.defer(refreshSilentAimFriends)
+	end)
+	connect(Players.PlayerRemoving, function()
+		task.defer(refreshSilentAimFriends)
+	end)
+end
+
 local pages = {}
 
 pages[1] = createPage("GunModer")
@@ -1328,7 +1481,7 @@ createToggle(animationSection, "Automatic Weapon Loop", "AutomaticWeaponLoop")
 createSlider(animationSection, "Animation Speed", "AnimationSpeed", 50, 150, 1, "%", 0)
 
 pages[3] = createPage("Bonus")
-createPageHeader(pages[3], "BONUS", "Advanced ESP and the separate Silent Aim panel")
+createPageHeader(pages[3], "BONUS", "Advanced ESP, Silent Aim and friend exclusions")
 local espSection = createSection(pages[3], "ADVANCED ESP")
 createToggle(espSection, "Advanced ESP", "EspEnabled")
 createToggle(espSection, "Show HP", "EspHealth")
@@ -1340,6 +1493,8 @@ local silentAimSection = createSection(pages[3], "SILENT AIM")
 createToggle(silentAimSection, "Silent Aim", "SilentAim")
 createSlider(silentAimSection, "FOV", "SilentAimFov", 30, 400, 5, " px", 0)
 createSlider(silentAimSection, "Range", "SilentAimRange", 100, 1500, 50, " studs", 0)
+local silentAimFriendsSection = createSection(pages[3], "FRIENDS")
+createSilentAimFriendsSelector(silentAimFriendsSection)
 
 updateGuiOptions = function()
 	weaponViewport.Visible = options.WeaponBackground
@@ -1941,7 +2096,8 @@ local function findSilentTarget()
 	local closestPart
 
 	for _, targetPlayer in ipairs(Players:GetPlayers()) do
-		if targetPlayer ~= player then
+		if targetPlayer ~= player
+			and not silentAimFriendIds[tostring(targetPlayer.UserId)] then
 			local character = targetPlayer.Character
 			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 			local targetPart = character and (character:FindFirstChild("Head")
